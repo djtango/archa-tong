@@ -1,0 +1,33 @@
+# OSX
+#
+.DS_Store
+
+node_modules
+
+# Android/IntelliJ
+#
+build/
+.idea
+.gradle
+local.properties
+*.iml
+android/.project
+android/app/.project
+android/app/bin/
+ios/fastlane/test_output/
+android/app/src/main/assets/index.android.bundle
+
+# node.js
+#
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# production
+/build
+
+# bucklescript
+/lib
+/types
+.merlin
+.bsb.lock
