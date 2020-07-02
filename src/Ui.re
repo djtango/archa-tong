@@ -1,20 +1,45 @@
 open ReactNative;
 
+let presentDuration = (d) => {
+  /* Js.Float.toString(d /. 1000.); */
+  Js.Float.toString(d);
+};
+
+module Duration = {
+  [@react.component]
+  let v = (~state: Model.state) =>{
+    let t = Belt.Option.getWithDefault(state.timeLeft, state.durationInput);
+    <Text>
+      (presentDuration(t))->React.string
+    </Text>
+  };
+}
+
 /* type state = Model.state; */
 [@react.component]
 let v = () => {
-  let (state, dispatch) = React.useReducer(Model.reducer, {durationInput: -1.0, timerStartTime: -1.0});
+  let r = (a, b) => {
+    let (state, _) = Model.withCoeffect(Model.reducer, a, b);
+    state;
+  };
+  let (state, dispatch) = React.useReducer(r, Model.initState);
+  let f = (dispatch) => (a) => {
+    ignore(dispatch(a));
+    ();
+  };
   <View>
-    <Text>
-      (string_of_float(state.durationInput))->React.string
-    </Text>
+    <Duration.v state={state}/>
     <TextInput placeholder={"time in ms"}
-               onChange={(changeEvent => dispatch( Model.SetDuration(changeEvent##nativeEvent##text) ))}
-               >
+               onChange={(changeEvent => dispatch( Model.SetDuration(changeEvent##nativeEvent##text) ))}>
     </TextInput>
-    <TouchableOpacity onPress={_ => dispatch( Model.SetDuration(string_of_float(state.durationInput -. 1.0)) )}>
+    <TouchableOpacity onPress={_ => dispatch(Model.Start(f(dispatch)))}>
       <Text>
         "Start"->React.string
+      </Text>
+    </TouchableOpacity>
+    <TouchableOpacity onPress={_ => dispatch(Model.Stop)}>
+      <Text>
+        "Stop"->React.string
       </Text>
     </TouchableOpacity>
  </View>
