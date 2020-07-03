@@ -35,12 +35,12 @@ function Ui$v(Props) {
                   state: match[0]
                 }), React.createElement(ReactNative.TextInput, {
                   onChange: (function (changeEvent) {
-                      return Curry._1(dispatch, /* ASetDuration */Block.__(1, [changeEvent.nativeEvent.text]));
+                      return Curry._1(dispatch, /* SetDuration */Block.__(1, [changeEvent.nativeEvent.text]));
                     }),
                   placeholder: "time in ms"
                 }), React.createElement(ReactNative.TouchableOpacity, {
                   onPress: (function (param) {
-                      return Curry._1(dispatch, /* AStart */Block.__(0, [(function (param) {
+                      return Curry._1(dispatch, /* Start */Block.__(0, [(function (param) {
                                         Curry._1(dispatch, param);
                                         
                                       })]));
@@ -50,7 +50,7 @@ function Ui$v(Props) {
                       })
                 }), React.createElement(ReactNative.TouchableOpacity, {
                   onPress: (function (param) {
-                      return Curry._1(dispatch, /* AStop */1);
+                      return Curry._1(dispatch, /* Stop */1);
                     }),
                   children: React.createElement(ReactNative.Text, {
                         children: "Stop"

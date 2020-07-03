@@ -31,14 +31,14 @@ let v = () => {
   <View>
     <Duration.v state={state}/>
     <TextInput placeholder={"time in ms"}
-               onChange={(changeEvent => dispatch( Model.ASetDuration(changeEvent##nativeEvent##text) ))}>
+               onChange={(changeEvent => dispatch( Model.SetDuration(changeEvent##nativeEvent##text) ))}>
     </TextInput>
-    <TouchableOpacity onPress={_ => dispatch(Model.AStart(f(dispatch)))}>
+    <TouchableOpacity onPress={_ => dispatch(Model.Start(f(dispatch)))}>
       <Text>
         "Start"->React.string
       </Text>
     </TouchableOpacity>
-    <TouchableOpacity onPress={_ => dispatch(Model.AStop)}>
+    <TouchableOpacity onPress={_ => dispatch(Model.Stop)}>
       <Text>
         "Stop"->React.string
       </Text>

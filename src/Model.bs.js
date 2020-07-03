@@ -41,21 +41,15 @@ function stopClock(intervalId) {
   
 }
 
-function startClock2(dispatch) {
-  return Caml_option.some(setInterval((function (param) {
-                    return Curry._1(dispatch, /* AGetCurrentTime */2);
-                  }), 30));
-}
-
 function businessLogic(state, action) {
   if (typeof action === "number") {
     switch (action) {
-      case /* ANoop */0 :
+      case /* Noop */0 :
           return /* tuple */[
                   state,
                   /* IODoNothing */0
                 ];
-      case /* AStop */1 :
+      case /* Stop */1 :
           return /* tuple */[
                   {
                     durationInput: -1.0,
@@ -66,17 +60,17 @@ function businessLogic(state, action) {
                   },
                   /* IOStopTimer */Block.__(1, [state.intervalId])
                 ];
-      case /* AGetCurrentTime */2 :
+      case /* GetCurrentTime */2 :
           return /* tuple */[
                   state,
                   /* IOGetCurrentTime */1
                 ];
-      case /* ASetTimeLeft */3 :
+      case /* SetTimeLeft */3 :
           throw [
                 Caml_builtin_exceptions.match_failure,
                 /* tuple */[
                   "Model.re",
-                  83,
+                  61,
                   39
                 ]
               ];
@@ -84,12 +78,12 @@ function businessLogic(state, action) {
     }
   } else {
     switch (action.tag | 0) {
-      case /* AStart */0 :
+      case /* Start */0 :
           return /* tuple */[
                   state,
                   /* IOStartTimer */Block.__(0, [action[0]])
                 ];
-      case /* ASetDuration */1 :
+      case /* SetDuration */1 :
           return /* tuple */[
                   {
                     durationInput: Caml_format.caml_float_of_string(action[0]),
@@ -100,7 +94,7 @@ function businessLogic(state, action) {
                   },
                   /* IODoNothing */0
                 ];
-      case /* ASetTimer */2 :
+      case /* SetTimer */2 :
           return /* tuple */[
                   {
                     durationInput: state.durationInput,
@@ -111,7 +105,7 @@ function businessLogic(state, action) {
                   },
                   /* IODoNothing */0
                 ];
-      case /* ASetCurrentTime */3 :
+      case /* SetCurrentTime */3 :
           return /* tuple */[
                   setTimeLeft({
                         durationInput: state.durationInput,
@@ -130,38 +124,38 @@ function businessLogic(state, action) {
 function runEffect(effect) {
   if (typeof effect === "number") {
     if (effect === /* IODoNothing */0) {
-      return /* ANoop */0;
+      return /* Noop */0;
     } else {
-      return /* ASetCurrentTime */Block.__(3, [Date.now()]);
+      return /* SetCurrentTime */Block.__(3, [Date.now()]);
     }
   } else if (effect.tag) {
-    return /* ASetTimer */Block.__(2, [
+    return /* SetTimer */Block.__(2, [
               stopClock(effect[0]),
               -1.0
             ]);
   } else {
-    return /* ASetTimer */Block.__(2, [
-              startClock2(effect[0]),
+    return /* SetTimer */Block.__(2, [
+              startClock(effect[0]),
               Date.now()
             ]);
   }
 }
 
-function wrapBusinessLogicWithEffects(f, _state, _action2) {
+function wrapBusinessLogicWithEffects(f, _state, _action) {
   while(true) {
-    var action2 = _action2;
+    var action = _action;
     var state = _state;
-    var match = Curry._2(f, state, action2);
+    var match = Curry._2(f, state, action);
     var effect = match[1];
     var newState = match[0];
     if (effect === /* IODoNothing */0) {
       return /* tuple */[
               newState,
-              /* ANoop */0
+              /* Noop */0
             ];
     }
     var nextAction = runEffect(effect);
-    _action2 = nextAction;
+    _action = nextAction;
     _state = newState;
     continue ;
   };
@@ -176,13 +170,12 @@ var initState = {
 };
 
 export {
+  initState ,
   timeLeft ,
   calcEndTime ,
-  initState ,
   setTimeLeft ,
   startClock ,
   stopClock ,
-  startClock2 ,
   businessLogic ,
   runEffect ,
   wrapBusinessLogicWithEffects ,
