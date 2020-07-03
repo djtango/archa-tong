@@ -56,43 +56,58 @@ let stopClock = (intervalId) => {
   None;
 }
 
-type reducer = (state, action) => (state, action);
-let reducer = (state, action) => {
-  Js.log("reducer");
-  Js.log(state);
-  Js.log(action);
-  let newState = switch (action) {
-    | Start(dispatch) => { ...state, intervalId: startClock(dispatch), timerStartTime: Js.Date.now()};
-    | Stop => { ...state, durationInput: -1.0, intervalId: stopClock(state.intervalId) };
-    | SetDuration(v) => { ...state, durationInput: float_of_string(v) };
-    | GetCurrentTime => { ...state, currentTime: Some(Js.Date.now()) };
-    | SetTimeLeft => setTimeLeft(state);
-    | Noop => state;
-  };
-  let newAction = switch (action) {
-    | Start(_) => GetCurrentTime;
-    | Stop => Noop;
-    | SetDuration(_) => Noop;
-    | GetCurrentTime => SetTimeLeft;
-    | SetTimeLeft => Noop;
-    | Noop => Noop;
-  };
-  (newState, newAction);
+type action2 =
+  | ANoop
+  | AStart(action2 => unit)
+  | AStop
+  | ASetDuration(string)
+  | AGetCurrentTime
+  | ASetTimeLeft
+  | ASetTimer(option(Js.Global.intervalId), float)
+  | ASetCurrentTime(float);
+
+
+let startClock2 = (dispatch) => {
+  Some(Js.Global.setInterval(() => dispatch(AGetCurrentTime), 30));
 };
 
-/* type withCoeffect = (reducer, state, action) => state; */
-let rec withCoeffect = (f, state, action) => {
-  let (newState, nextAction) = f(state, action);
-  if (nextAction == Noop) {
-    (newState, Noop);
-  } else {
-    withCoeffect(f, newState, nextAction);
+
+type effect =
+  | IODoNothing
+  | IOStartTimer(action2 => unit)
+  | IOStopTimer(option(Js.Global.intervalId))
+  | IOGetCurrentTime;
+
+// TODO how can we extract/separate dispatch from state and business logic?
+type businessLogic = (state, action2) => (state, effect);
+let businessLogic = (state, action) => {
+  switch (action) {
+    | AStart(dispatch) => (state, IOStartTimer(dispatch));
+    | AStop => ({ ...state, durationInput: -1.0}, IOStopTimer(state.intervalId));
+    | ASetDuration(v) => ({ ...state, durationInput: float_of_string(v) }, IODoNothing);
+    | ASetTimer(intervalId, t) => ({ ...state, intervalId: intervalId, timerStartTime: t }, IODoNothing)
+    | AGetCurrentTime => (state, IOGetCurrentTime);
+    | ASetCurrentTime(t) => (setTimeLeft({ ...state, currentTime: Some(t)}), IODoNothing);
+    | ANoop => (state, IODoNothing);
   };
 }
 
-/* Js.Date.( now() |> fromFloat |> Js.log ); */
+type runEffect = (effect) => action2;
+let runEffect = (effect) => {
+  switch (effect) {
+    | IODoNothing => ANoop;
+    | IOStartTimer(dispatch) => ASetTimer(startClock2(dispatch), Js.Date.now());
+    | IOStopTimer(intervalId) => ASetTimer(stopClock(intervalId), -1.0);
+    | IOGetCurrentTime => ASetCurrentTime(Js.Date.now());
+  }
+};
 
-let greetMore = (name) => {
-  let part1 = "Hello";
-  part1 ++ " " ++ name;
+let rec wrapBusinessLogicWithEffects = (f, state, action2) => {
+  let (newState, effect) = f(state, action2);
+  if (effect == IODoNothing) {
+    (newState, ANoop);
+  } else {
+    let nextAction = runEffect(effect);
+    wrapBusinessLogicWithEffects(f, newState, nextAction);
+  };
 };

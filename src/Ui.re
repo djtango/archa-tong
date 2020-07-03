@@ -19,7 +19,8 @@ module Duration = {
 [@react.component]
 let v = () => {
   let r = (a, b) => {
-    let (state, _) = Model.withCoeffect(Model.reducer, a, b);
+    /* let (state, _) = Model.withCoeffect(Model.reducer, a, b); */
+    let (state, _) = Model.wrapBusinessLogicWithEffects(Model.businessLogic, a, b);
     state;
   };
   let (state, dispatch) = React.useReducer(r, Model.initState);
@@ -30,14 +31,14 @@ let v = () => {
   <View>
     <Duration.v state={state}/>
     <TextInput placeholder={"time in ms"}
-               onChange={(changeEvent => dispatch( Model.SetDuration(changeEvent##nativeEvent##text) ))}>
+               onChange={(changeEvent => dispatch( Model.ASetDuration(changeEvent##nativeEvent##text) ))}>
     </TextInput>
-    <TouchableOpacity onPress={_ => dispatch(Model.Start(f(dispatch)))}>
+    <TouchableOpacity onPress={_ => dispatch(Model.AStart(f(dispatch)))}>
       <Text>
         "Start"->React.string
       </Text>
     </TouchableOpacity>
-    <TouchableOpacity onPress={_ => dispatch(Model.Stop)}>
+    <TouchableOpacity onPress={_ => dispatch(Model.AStop)}>
       <Text>
         "Stop"->React.string
       </Text>
