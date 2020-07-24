@@ -1,6 +1,6 @@
 type state = {
   durationInput: float,
-  timerStartTime: float,
+  timerStartTime: option(float),
   currentTime: option(float),
   timeLeft: option(float),
   intervalId: option(Js.Global.intervalId)
@@ -12,8 +12,7 @@ type action =
   | Stop
   | SetDuration(string)
   | GetCurrentTime
-  | SetTimeLeft
-  | SetTimer(option(Js.Global.intervalId), float)
+  | SetTimer(option(Js.Global.intervalId), option(float))
   | SetCurrentTime(float);
 
 type effect =
@@ -24,7 +23,7 @@ type effect =
 
 let initState = {
   durationInput: -1.0,
-  timerStartTime: -1.0,
+  timerStartTime: None,
   currentTime: None,
   timeLeft: None,
   intervalId: None
@@ -38,12 +37,31 @@ let calcEndTime = (startTime, duration) => {
   startTime +. duration;
 };
 
+module Option = {
+  // TODO look at Rationale
+  let pure_ = (x) => Some(x);
+  let apply = (optionF, optionO) => {
+    switch ((optionF, optionO)) {
+      | (Some(f), Some(o)) => Some(f(o));
+      | (Some(_), None) => None;
+      | (None, Some(_)) => None;
+      | (None, None) => None;
+    };
+  };
+  let lift2 = (f, oA, oB) => {
+    apply(apply((pure_(f)), oA), oB);
+  }
+};
+
 let setTimeLeft = (state) => {
-  let start = Belt.Option.getWithDefault(state.currentTime, state.timerStartTime);
-  let end_ = calcEndTime(state.timerStartTime, state.durationInput);
+  let { timerStartTime, currentTime, durationInput } = state;
+  let start = Belt.Option.(
+    map(timerStartTime, getWithDefault(currentTime))
+    );
+  let end_ = Belt.Option.map(timerStartTime, (x) => calcEndTime(x, durationInput));
   {
     ...state,
-    timeLeft: Some(timeLeft(start, end_))
+    timeLeft: Option.lift2(timeLeft, start, end_)
   }
 }
 
@@ -57,6 +75,7 @@ let stopClock = (intervalId) => {
 }
 
 // TODO how can we extract/separate dispatch from state and business logic?
+// TODO look at reductive
 type businessLogic = (state, action) => (state, effect);
 let businessLogic = (state, action) => {
   switch (action) {
@@ -70,12 +89,17 @@ let businessLogic = (state, action) => {
   };
 }
 
+let startTimer = (dispatch) => {
+  Js.log("starting timer...");
+  SetTimer(startClock(dispatch), Some(Js.Date.now()));
+}
+
 type runEffect = (effect) => action;
 let runEffect = (effect) => {
   switch (effect) {
     | IODoNothing => Noop;
-    | IOStartTimer(dispatch) => SetTimer(startClock(dispatch), Js.Date.now());
-    | IOStopTimer(intervalId) => SetTimer(stopClock(intervalId), -1.0);
+    | IOStartTimer(dispatch) => startTimer(dispatch);
+    | IOStopTimer(intervalId) => SetTimer(stopClock(intervalId), None);
     | IOGetCurrentTime => SetCurrentTime(Js.Date.now());
   }
 };

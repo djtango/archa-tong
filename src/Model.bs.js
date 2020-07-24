@@ -5,7 +5,6 @@ import * as Curry from "bs-platform/lib/es6/curry.js";
 import * as Belt_Option from "bs-platform/lib/es6/belt_Option.js";
 import * as Caml_format from "bs-platform/lib/es6/caml_format.js";
 import * as Caml_option from "bs-platform/lib/es6/caml_option.js";
-import * as Caml_builtin_exceptions from "bs-platform/lib/es6/caml_builtin_exceptions.js";
 
 function timeLeft(currentTime, endTime) {
   return endTime - currentTime;
@@ -15,14 +14,42 @@ function calcEndTime(startTime, duration) {
   return startTime + duration;
 }
 
+function pure_(x) {
+  return Caml_option.some(x);
+}
+
+function apply(optionF, optionO) {
+  if (optionF !== undefined && optionO !== undefined) {
+    return Caml_option.some(Curry._1(optionF, Caml_option.valFromOption(optionO)));
+  }
+  
+}
+
+function lift2(f, oA, oB) {
+  return apply(apply(Caml_option.some(f), oA), oB);
+}
+
+var $$Option = {
+  pure_: pure_,
+  apply: apply,
+  lift2: lift2
+};
+
 function setTimeLeft(state) {
-  var start = Belt_Option.getWithDefault(state.currentTime, state.timerStartTime);
-  var end_ = state.timerStartTime + state.durationInput;
+  var currentTime = state.currentTime;
+  var timerStartTime = state.timerStartTime;
+  var durationInput = state.durationInput;
+  var start = Belt_Option.map(timerStartTime, (function (param) {
+          return Belt_Option.getWithDefault(currentTime, param);
+        }));
+  var end_ = Belt_Option.map(timerStartTime, (function (x) {
+          return x + durationInput;
+        }));
   return {
           durationInput: state.durationInput,
           timerStartTime: state.timerStartTime,
           currentTime: state.currentTime,
-          timeLeft: end_ - start,
+          timeLeft: lift2(timeLeft, start, end_),
           intervalId: state.intervalId
         };
 }
@@ -65,15 +92,6 @@ function businessLogic(state, action) {
                   state,
                   /* IOGetCurrentTime */1
                 ];
-      case /* SetTimeLeft */3 :
-          throw [
-                Caml_builtin_exceptions.match_failure,
-                /* tuple */[
-                  "Model.re",
-                  61,
-                  39
-                ]
-              ];
       
     }
   } else {
@@ -121,6 +139,14 @@ function businessLogic(state, action) {
   }
 }
 
+function startTimer(dispatch) {
+  console.log("starting timer...");
+  return /* SetTimer */Block.__(2, [
+            startClock(dispatch),
+            Date.now()
+          ]);
+}
+
 function runEffect(effect) {
   if (typeof effect === "number") {
     if (effect === /* IODoNothing */0) {
@@ -131,13 +157,10 @@ function runEffect(effect) {
   } else if (effect.tag) {
     return /* SetTimer */Block.__(2, [
               stopClock(effect[0]),
-              -1.0
+              undefined
             ]);
   } else {
-    return /* SetTimer */Block.__(2, [
-              startClock(effect[0]),
-              Date.now()
-            ]);
+    return startTimer(effect[0]);
   }
 }
 
@@ -163,7 +186,7 @@ function wrapBusinessLogicWithEffects(f, _state, _action) {
 
 var initState = {
   durationInput: -1.0,
-  timerStartTime: -1.0,
+  timerStartTime: undefined,
   currentTime: undefined,
   timeLeft: undefined,
   intervalId: undefined
@@ -173,10 +196,12 @@ export {
   initState ,
   timeLeft ,
   calcEndTime ,
+  $$Option ,
   setTimeLeft ,
   startClock ,
   stopClock ,
   businessLogic ,
+  startTimer ,
   runEffect ,
   wrapBusinessLogicWithEffects ,
   
