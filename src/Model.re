@@ -19,7 +19,8 @@ type effect =
   | IODoNothing
   | IOStartTimer(action => unit)
   | IOStopTimer(option(Js.Global.intervalId))
-  | IOGetCurrentTime;
+  | IOGetCurrentTime
+  | IOCheckIfTimerFinished(option(float));
 
 let initState = {
   durationInput: -1.0,
@@ -74,6 +75,15 @@ let stopClock = (intervalId) => {
   None;
 }
 
+let setTimeLeft = (state, t) => {
+  let newState = setTimeLeft({ ...state, currentTime: Some(t)});
+  let { timeLeft } = newState;
+  // TODO this is arguably not a side-effect in itself, it is an action but a
+  // limitation of current abstraction is that every action has an effect and
+  // the action-effect pairing is linear with no branching
+  (newState, IOCheckIfTimerFinished(timeLeft));
+}
+
 // TODO how can we extract/separate dispatch from state and business logic?
 // TODO look at reductive
 type businessLogic = (state, action) => (state, effect);
@@ -84,7 +94,7 @@ let businessLogic = (state, action) => {
     | SetDuration(v) => ({ ...state, durationInput: float_of_string(v) }, IODoNothing);
     | SetTimer(intervalId, t) => ({ ...state, intervalId: intervalId, timerStartTime: t }, IODoNothing)
     | GetCurrentTime => (state, IOGetCurrentTime);
-    | SetCurrentTime(t) => (setTimeLeft({ ...state, currentTime: Some(t)}), IODoNothing);
+    | SetCurrentTime(t) => setTimeLeft(state, t);
     | Noop => (state, IODoNothing);
   };
 }
@@ -94,13 +104,25 @@ let startTimer = (dispatch) => {
   SetTimer(startClock(dispatch), Some(Js.Date.now()));
 }
 
+let isFinished = (timeLeft) => {
+  switch (timeLeft) {
+    | Some(t) => if (t <= 0.0) {
+      Stop;
+    } else {
+      Noop;
+    };
+    | None => Noop; // strictly an exception
+  }
+}
+
 type runEffect = (effect) => action;
 let runEffect = (effect) => {
   switch (effect) {
     | IODoNothing => Noop;
     | IOStartTimer(dispatch) => startTimer(dispatch);
     | IOStopTimer(intervalId) => SetTimer(stopClock(intervalId), None);
-    | IOGetCurrentTime => SetCurrentTime(Js.Date.now());
+    | IOGetCurrentTime => SetCurrentTime(Js.Date.now())
+    | IOCheckIfTimerFinished(timeLeft) => isFinished(timeLeft);
   }
 };
 

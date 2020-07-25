@@ -68,6 +68,20 @@ function stopClock(intervalId) {
   
 }
 
+function setTimeLeft$1(state, t) {
+  var newState = setTimeLeft({
+        durationInput: state.durationInput,
+        timerStartTime: state.timerStartTime,
+        currentTime: t,
+        timeLeft: state.timeLeft,
+        intervalId: state.intervalId
+      });
+  return /* tuple */[
+          newState,
+          /* IOCheckIfTimerFinished */Block.__(2, [newState.timeLeft])
+        ];
+}
+
 function businessLogic(state, action) {
   if (typeof action === "number") {
     switch (action) {
@@ -124,16 +138,7 @@ function businessLogic(state, action) {
                   /* IODoNothing */0
                 ];
       case /* SetCurrentTime */3 :
-          return /* tuple */[
-                  setTimeLeft({
-                        durationInput: state.durationInput,
-                        timerStartTime: state.timerStartTime,
-                        currentTime: action[0],
-                        timeLeft: state.timeLeft,
-                        intervalId: state.intervalId
-                      }),
-                  /* IODoNothing */0
-                ];
+          return setTimeLeft$1(state, action[0]);
       
     }
   }
@@ -147,6 +152,14 @@ function startTimer(dispatch) {
           ]);
 }
 
+function isFinished(timeLeft) {
+  if (timeLeft !== undefined && timeLeft <= 0.0) {
+    return /* Stop */1;
+  } else {
+    return /* Noop */0;
+  }
+}
+
 function runEffect(effect) {
   if (typeof effect === "number") {
     if (effect === /* IODoNothing */0) {
@@ -154,13 +167,18 @@ function runEffect(effect) {
     } else {
       return /* SetCurrentTime */Block.__(3, [Date.now()]);
     }
-  } else if (effect.tag) {
-    return /* SetTimer */Block.__(2, [
-              stopClock(effect[0]),
-              undefined
-            ]);
-  } else {
-    return startTimer(effect[0]);
+  }
+  switch (effect.tag | 0) {
+    case /* IOStartTimer */0 :
+        return startTimer(effect[0]);
+    case /* IOStopTimer */1 :
+        return /* SetTimer */Block.__(2, [
+                  stopClock(effect[0]),
+                  undefined
+                ]);
+    case /* IOCheckIfTimerFinished */2 :
+        return isFinished(effect[0]);
+    
   }
 }
 
@@ -197,11 +215,12 @@ export {
   timeLeft ,
   calcEndTime ,
   $$Option ,
-  setTimeLeft ,
   startClock ,
   stopClock ,
+  setTimeLeft$1 as setTimeLeft,
   businessLogic ,
   startTimer ,
+  isFinished ,
   runEffect ,
   wrapBusinessLogicWithEffects ,
   
