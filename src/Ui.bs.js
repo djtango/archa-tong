@@ -13,7 +13,7 @@ function presentDuration(d) {
 
 function Ui$Duration$v(Props) {
   var state = Props.state;
-  var t = Belt_Option.getWithDefault(state.timeLeft, state.durationInput);
+  var t = Belt_Option.getWithDefault(state.timeLeft, Number(state.durationInput));
   return React.createElement(ReactNative.Text, {
               children: t.toString()
             });

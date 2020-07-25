@@ -2,9 +2,22 @@
 
 import * as Block from "bs-platform/lib/es6/block.js";
 import * as Curry from "bs-platform/lib/es6/curry.js";
+import * as Belt_Float from "bs-platform/lib/es6/belt_Float.js";
 import * as Belt_Option from "bs-platform/lib/es6/belt_Option.js";
-import * as Caml_format from "bs-platform/lib/es6/caml_format.js";
 import * as Caml_option from "bs-platform/lib/es6/caml_option.js";
+
+function setDuration(state, input) {
+  return /* tuple */[
+          {
+            durationInput: input,
+            timerStartTime: state.timerStartTime,
+            currentTime: state.currentTime,
+            timeLeft: state.timeLeft,
+            intervalId: state.intervalId
+          },
+          /* IODoNothing */0
+        ];
+}
 
 function timeLeft(currentTime, endTime) {
   return endTime - currentTime;
@@ -38,13 +51,11 @@ var $$Option = {
 function setTimeLeft(state) {
   var currentTime = state.currentTime;
   var timerStartTime = state.timerStartTime;
-  var durationInput = state.durationInput;
+  var duration = Belt_Float.fromString(state.durationInput);
   var start = Belt_Option.map(timerStartTime, (function (param) {
           return Belt_Option.getWithDefault(currentTime, param);
         }));
-  var end_ = Belt_Option.map(timerStartTime, (function (x) {
-          return x + durationInput;
-        }));
+  var end_ = lift2(calcEndTime, timerStartTime, duration);
   return {
           durationInput: state.durationInput,
           timerStartTime: state.timerStartTime,
@@ -93,7 +104,7 @@ function businessLogic(state, action) {
       case /* Stop */1 :
           return /* tuple */[
                   {
-                    durationInput: -1.0,
+                    durationInput: "",
                     timerStartTime: state.timerStartTime,
                     currentTime: state.currentTime,
                     timeLeft: state.timeLeft,
@@ -116,16 +127,7 @@ function businessLogic(state, action) {
                   /* IOStartTimer */Block.__(0, [action[0]])
                 ];
       case /* SetDuration */1 :
-          return /* tuple */[
-                  {
-                    durationInput: Caml_format.caml_float_of_string(action[0]),
-                    timerStartTime: state.timerStartTime,
-                    currentTime: state.currentTime,
-                    timeLeft: state.timeLeft,
-                    intervalId: state.intervalId
-                  },
-                  /* IODoNothing */0
-                ];
+          return setDuration(state, action[0]);
       case /* SetTimer */2 :
           return /* tuple */[
                   {
@@ -203,7 +205,7 @@ function wrapBusinessLogicWithEffects(f, _state, _action) {
 }
 
 var initState = {
-  durationInput: -1.0,
+  durationInput: "",
   timerStartTime: undefined,
   currentTime: undefined,
   timeLeft: undefined,
@@ -212,6 +214,7 @@ var initState = {
 
 export {
   initState ,
+  setDuration ,
   timeLeft ,
   calcEndTime ,
   $$Option ,

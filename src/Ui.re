@@ -1,14 +1,13 @@
 open ReactNative;
 
 let presentDuration = (d) => {
-  /* Js.Float.toString(d /. 1000.); */
   Js.Float.toString(d);
 };
 
 module Duration = {
   [@react.component]
   let v = (~state: Model.state) =>{
-    let t = Belt.Option.getWithDefault(state.timeLeft, state.durationInput);
+    let t = Belt.Option.getWithDefault(state.timeLeft, Js.Float.fromString(state.durationInput));
     <Text>
       (presentDuration(t))->React.string
     </Text>
@@ -19,7 +18,6 @@ module Duration = {
 [@react.component]
 let v = () => {
   let r = (a, b) => {
-    /* let (state, _) = Model.withCoeffect(Model.reducer, a, b); */
     let (state, _) = Model.wrapBusinessLogicWithEffects(Model.businessLogic, a, b);
     state;
   };
@@ -30,7 +28,7 @@ let v = () => {
   };
   <View>
     <Duration.v state={state}/>
-    <TextInput placeholder={"time in ms"}
+    <TextInput placeholder={"time in ms"} // TODO use a real time picker
                onChange={(changeEvent => dispatch( Model.SetDuration(changeEvent##nativeEvent##text) ))}>
     </TextInput>
     <TouchableOpacity onPress={_ => dispatch(Model.Start(f(dispatch)))}>

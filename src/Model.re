@@ -1,5 +1,5 @@
 type state = {
-  durationInput: float,
+  durationInput: string,
   timerStartTime: option(float),
   currentTime: option(float),
   timeLeft: option(float),
@@ -23,11 +23,15 @@ type effect =
   | IOCheckIfTimerFinished(option(float));
 
 let initState = {
-  durationInput: -1.0,
+  durationInput: "",
   timerStartTime: None,
   currentTime: None,
   timeLeft: None,
   intervalId: None
+};
+
+let setDuration = (state, input) => {
+  ({ ...state, durationInput: input}, IODoNothing);
 };
 
 let timeLeft = (currentTime, endTime) => {
@@ -56,10 +60,11 @@ module Option = {
 
 let setTimeLeft = (state) => {
   let { timerStartTime, currentTime, durationInput } = state;
+  let duration = Belt.Float.fromString(durationInput);
   let start = Belt.Option.(
     map(timerStartTime, getWithDefault(currentTime))
     );
-  let end_ = Belt.Option.map(timerStartTime, (x) => calcEndTime(x, durationInput));
+  let end_ = Option.lift2(calcEndTime, timerStartTime, duration); //Belt.Option.map(timerStartTime, (x) => calcEndTime(x, durationInput));
   {
     ...state,
     timeLeft: Option.lift2(timeLeft, start, end_)
@@ -90,8 +95,8 @@ type businessLogic = (state, action) => (state, effect);
 let businessLogic = (state, action) => {
   switch (action) {
     | Start(dispatch) => (state, IOStartTimer(dispatch));
-    | Stop => ({ ...state, durationInput: -1.0}, IOStopTimer(state.intervalId));
-    | SetDuration(v) => ({ ...state, durationInput: float_of_string(v) }, IODoNothing);
+    | Stop => ({ ...state, durationInput: ""}, IOStopTimer(state.intervalId));
+    | SetDuration(v) => setDuration(state, v);
     | SetTimer(intervalId, t) => ({ ...state, intervalId: intervalId, timerStartTime: t }, IODoNothing)
     | GetCurrentTime => (state, IOGetCurrentTime);
     | SetCurrentTime(t) => setTimeLeft(state, t);
