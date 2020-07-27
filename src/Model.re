@@ -64,7 +64,7 @@ let setTimeLeft = (state) => {
   let start = Belt.Option.(
     map(timerStartTime, getWithDefault(currentTime))
     );
-  let end_ = Option.lift2(calcEndTime, timerStartTime, duration); //Belt.Option.map(timerStartTime, (x) => calcEndTime(x, durationInput));
+  let end_ = Option.lift2(calcEndTime, timerStartTime, duration);
   {
     ...state,
     timeLeft: Option.lift2(timeLeft, start, end_)
@@ -80,7 +80,7 @@ let stopClock = (intervalId) => {
   None;
 }
 
-let setTimeLeft = (state, t) => {
+let setCurrentTimeAndTimeLeft = (state, t) => {
   let newState = setTimeLeft({ ...state, currentTime: Some(t)});
   let { timeLeft } = newState;
   // TODO this is arguably not a side-effect in itself, it is an action but a
@@ -95,11 +95,11 @@ type businessLogic = (state, action) => (state, effect);
 let businessLogic = (state, action) => {
   switch (action) {
     | Start(dispatch) => (state, IOStartTimer(dispatch));
-    | Stop => ({ ...state, durationInput: ""}, IOStopTimer(state.intervalId));
+    | Stop => ({ ...state, durationInput: "", timeLeft: None}, IOStopTimer(state.intervalId));
     | SetDuration(v) => setDuration(state, v);
     | SetTimer(intervalId, t) => ({ ...state, intervalId: intervalId, timerStartTime: t }, IODoNothing)
     | GetCurrentTime => (state, IOGetCurrentTime);
-    | SetCurrentTime(t) => setTimeLeft(state, t);
+    | SetCurrentTime(t) => setCurrentTimeAndTimeLeft(state, t);
     | Noop => (state, IODoNothing);
   };
 }

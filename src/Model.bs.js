@@ -79,7 +79,7 @@ function stopClock(intervalId) {
   
 }
 
-function setTimeLeft$1(state, t) {
+function setCurrentTimeAndTimeLeft(state, t) {
   var newState = setTimeLeft({
         durationInput: state.durationInput,
         timerStartTime: state.timerStartTime,
@@ -107,7 +107,7 @@ function businessLogic(state, action) {
                     durationInput: "",
                     timerStartTime: state.timerStartTime,
                     currentTime: state.currentTime,
-                    timeLeft: state.timeLeft,
+                    timeLeft: undefined,
                     intervalId: state.intervalId
                   },
                   /* IOStopTimer */Block.__(1, [state.intervalId])
@@ -140,7 +140,7 @@ function businessLogic(state, action) {
                   /* IODoNothing */0
                 ];
       case /* SetCurrentTime */3 :
-          return setTimeLeft$1(state, action[0]);
+          return setCurrentTimeAndTimeLeft(state, action[0]);
       
     }
   }
@@ -222,9 +222,10 @@ export {
   timeLeft ,
   calcEndTime ,
   $$Option ,
+  setTimeLeft ,
   startClock ,
   stopClock ,
-  setTimeLeft$1 as setTimeLeft,
+  setCurrentTimeAndTimeLeft ,
   businessLogic ,
   startTimer ,
   isFinished ,
