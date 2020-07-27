@@ -204,6 +204,10 @@ function wrapBusinessLogicWithEffects(f, _state, _action) {
   };
 }
 
+function reducer(s, a) {
+  return wrapBusinessLogicWithEffects(businessLogic, s, a)[0];
+}
+
 var initState = {
   durationInput: "",
   timerStartTime: undefined,
@@ -226,6 +230,7 @@ export {
   isFinished ,
   runEffect ,
   wrapBusinessLogicWithEffects ,
+  reducer ,
   
 }
 /* No side effect */

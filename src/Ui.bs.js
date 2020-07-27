@@ -4,34 +4,39 @@ import * as Block from "bs-platform/lib/es6/block.js";
 import * as Curry from "bs-platform/lib/es6/curry.js";
 import * as Model from "./Model.bs.js";
 import * as React from "react";
+import * as Js_math from "bs-platform/lib/es6/js_math.js";
 import * as Belt_Option from "bs-platform/lib/es6/belt_Option.js";
 import * as ReactNative from "react-native";
 
 function presentDuration(d) {
-  return d.toString();
+  var minutes = Js_math.floor(d / 60000.0);
+  var seconds = Js_math.floor(d / 1000.0) % 60;
+  var millis = Js_math.floor(d) % 1000;
+  return minutes.toString() + (":" + (seconds.toString() + ("." + millis.toString())));
 }
 
-function Ui$Duration$v(Props) {
+function durationInputToTime(prim) {
+  return Number(prim);
+}
+
+function Ui$TimeLeft$v(Props) {
   var state = Props.state;
   var t = Belt_Option.getWithDefault(state.timeLeft, Number(state.durationInput));
   return React.createElement(ReactNative.Text, {
-              children: t.toString()
+              children: presentDuration(t)
             });
 }
 
-var Duration = {
-  v: Ui$Duration$v
+var TimeLeft = {
+  v: Ui$TimeLeft$v
 };
 
 function Ui$v(Props) {
-  var r = function (a, b) {
-    return Model.wrapBusinessLogicWithEffects(Model.businessLogic, a, b)[0];
-  };
-  var match = React.useReducer(r, Model.initState);
+  var match = React.useReducer(Model.reducer, Model.initState);
   var dispatch = match[1];
   return React.createElement(ReactNative.View, {
               children: null
-            }, React.createElement(Ui$Duration$v, {
+            }, React.createElement(Ui$TimeLeft$v, {
                   state: match[0]
                 }), React.createElement(ReactNative.TextInput, {
                   onChange: (function (changeEvent) {
@@ -62,7 +67,8 @@ var v = Ui$v;
 
 export {
   presentDuration ,
-  Duration ,
+  durationInputToTime ,
+  TimeLeft ,
   v ,
   
 }

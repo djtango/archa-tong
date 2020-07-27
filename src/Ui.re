@@ -1,13 +1,19 @@
 open ReactNative;
 
-let presentDuration = (d) => {
-  Js.Float.toString(d);
+let presentDuration = (d: float) => {
+  let minutes = Js.Math.floor(d /. 60000.0);
+  let seconds = Js.Math.floor(d /. 1000.0) mod 60;
+  let millis = Js.Math.floor(d) mod 1000;
+  let s = Js.Int.toString;
+  s(minutes) ++ ":" ++ s(seconds) ++ "." ++ s(millis);
 };
 
-module Duration = {
+let durationInputToTime = Js.Float.fromString;
+
+module TimeLeft = {
   [@react.component]
   let v = (~state: Model.state) =>{
-    let t = Belt.Option.getWithDefault(state.timeLeft, Js.Float.fromString(state.durationInput));
+    let t = Belt.Option.getWithDefault(state.timeLeft, durationInputToTime(state.durationInput));
     <Text>
       (presentDuration(t))->React.string
     </Text>
@@ -17,17 +23,13 @@ module Duration = {
 /* type state = Model.state; */
 [@react.component]
 let v = () => {
-  let r = (a, b) => {
-    let (state, _) = Model.wrapBusinessLogicWithEffects(Model.businessLogic, a, b);
-    state;
-  };
-  let (state, dispatch) = React.useReducer(r, Model.initState);
+  let (state, dispatch) = React.useReducer(Model.reducer, Model.initState);
   let f = (dispatch) => (a) => {
     ignore(dispatch(a));
     ();
   };
   <View>
-    <Duration.v state={state}/>
+    <TimeLeft.v state={state}/>
     <TextInput placeholder={"time in ms"} // TODO use a real time picker
                onChange={(changeEvent => dispatch( Model.SetDuration(changeEvent##nativeEvent##text) ))}>
     </TextInput>

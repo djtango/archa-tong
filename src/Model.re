@@ -140,3 +140,5 @@ let rec wrapBusinessLogicWithEffects = (f, state, action) => {
     wrapBusinessLogicWithEffects(f, newState, nextAction);
   };
 };
+
+let reducer = (s, a) => fst @@ wrapBusinessLogicWithEffects(businessLogic, s, a);
